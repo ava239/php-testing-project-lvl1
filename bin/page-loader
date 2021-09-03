@@ -1,0 +1,31 @@
+#!/usr/bin/env php
+
+<?php
+
+$autoloadPath1 = __DIR__ . '/../../../autoload.php';
+$autoloadPath2 = __DIR__ . '/../vendor/autoload.php';
+if (file_exists($autoloadPath1)) {
+    require_once $autoloadPath1;
+} else {
+    require_once $autoloadPath2;
+}
+
+$doc = <<<DOC
+Downloads page from URL and save it locally
+
+Usage:
+  page-loader (-h|--help)
+  page-loader (-v|--version)
+  page-loader [-o|--output <dir>] <url>
+
+Options:
+  -h --help                     Show this screen
+  -v --version                  Show version
+  -o --output <dir>             Output dir [default: .]
+DOC;
+$args = Docopt::handle($doc, ['version' => '0.0.1']);
+
+$loader = new \Ava239\Page\Loader\Core($args['--output']);
+echo $loader->download($args['<url>']);
+
+

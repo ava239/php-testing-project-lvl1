@@ -1,0 +1,42 @@
+{
+  "name": "hexlet/code",
+  "description": "page loader",
+  "type": "library",
+  "license": "MIT",
+  "bin": [
+    "bin/page-loader"
+  ],
+  "authors": [
+    {
+      "name": "Ava",
+      "email": "ava239@yandex.ru"
+    }
+  ],
+  "scripts": {
+    "test": "phpunit tests",
+    "phpcs": "phpcs"
+  },
+  "autoload": {
+    "psr-4": {
+      "Ava239\\Page\\Loader\\": "src",
+      "Ava239\\Page\\Loader\\Tests\\": "tests"
+    }
+  },
+  "require": {
+    "php": "^7.4",
+    "docopt/docopt": "^1.0",
+    "ext-json": "*",
+    "tightenco/collect": "^5.6",
+    "nesbot/carbon": "^2.32.2",
+    "symfony/string": "^5.1",
+    "phpstan/phpstan": "^0.12.65"
+  },
+  "require-dev": {
+    "psy/psysh": "@stable",
+    "phpstan/phpstan-phpunit": "^0.12.16",
+    "phpstan/extension-installer": "^1.0",
+    "symfony/var-dumper": "^4.0",
+    "phpunit/phpunit": "^9.5.9",
+    "squizlabs/php_codesniffer": "^3.6.0"
+  }
+}
