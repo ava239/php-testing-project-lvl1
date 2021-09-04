@@ -51,7 +51,7 @@ class DownloadTest extends TestCase
 
         $result = $this->loader->download($url);
 
-        $this->assertEquals("Page was successfully loaded into {$directoryPath}", $result);
+        $this->assertEquals("Page was successfully loaded into {$directoryPath}/{$expectedFilename}\n", $result);
 
         $this->assertTrue($this->root->hasChild("$expectedFilename"));
 

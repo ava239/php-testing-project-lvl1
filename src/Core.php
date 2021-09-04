@@ -24,7 +24,7 @@ class Core
 
         file_put_contents("{$this->outputDir}/{$this->generateFileName($url)}", $data);
 
-        return "Page was successfully loaded into {$this->outputDir}";
+        return "Page was successfully loaded into {$this->outputDir}/{$this->generateFileName($url)}\n";
     }
 
     public function load(string $url): string
