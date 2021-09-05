@@ -30,7 +30,8 @@
     "nesbot/carbon": "^2.32.2",
     "symfony/string": "^5.1",
     "phpstan/phpstan": "^0.12.65",
-    "guzzlehttp/guzzle": "^7.3"
+    "guzzlehttp/guzzle": "^7.3",
+    "imangazaliev/didom": "^1.18"
   },
   "require-dev": {
     "psy/psysh": "@stable",

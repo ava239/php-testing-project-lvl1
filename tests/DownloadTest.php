@@ -56,6 +56,10 @@ class DownloadTest extends TestCase
             $this->loader->prepareFileName('https://ru.hexlet.io/courses')
         );
         $this->assertEquals(
+            'ru-hexlet-io-courses.html',
+            $this->loader->prepareFileName('https://ru.hexlet.io/courses/')
+        );
+        $this->assertEquals(
             'ru-hexlet-io-courses',
             $this->loader->prepareFileName('https://ru.hexlet.io/courses', '')
         );
@@ -107,7 +111,7 @@ class DownloadTest extends TestCase
         $imgFixture = $this->getFixtureFullPath('resources/php.png');
         $imgData = file_get_contents($imgFixture);
         $this->assertTrue($this->root->hasChild("{$expectedFilename}_files/{$imgPath}"));
-        $actualData = file_get_contents("{$this->rootPath}/{$imgPath}");
+        $actualData = file_get_contents("{$this->rootPath}/{$expectedFilename}_files/{$imgPath}");
         $this->assertEquals($imgData, $actualData);
     }
 }
