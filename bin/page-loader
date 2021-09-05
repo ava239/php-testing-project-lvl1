@@ -24,8 +24,13 @@ Options:
   -o --output <dir>             Output dir [default: .]
 DOC;
 $args = Docopt::handle($doc, ['version' => '0.0.1']);
+[$outputDir] = $args['--output'];
 
-$loader = new \Ava239\Page\Loader\Core($args['--output'][0]);
-echo $loader->download($args['<url>']);
+$client = new \GuzzleHttp\Client();
+
+$loader = new \Ava239\Page\Loader\Core();
+$mainPath = $loader->download($args['<url>'], $outputDir, $client);
+
+echo "Page was successfully loaded into {$mainPath}\n";
 
 

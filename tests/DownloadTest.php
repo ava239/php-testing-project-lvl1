@@ -34,7 +34,7 @@ class DownloadTest extends TestCase
         $this->mock = new MockHandler([]);
         $this->httpClient = new Client(['handler' => HandlerStack::create($this->mock)]);
         $this->root = vfsStream::setup('home');
-        $this->loader = new Core(vfsStream::url('home'), $this->httpClient);
+        $this->loader = new Core();
     }
 
     public function testSimpleDownload(): void
@@ -49,9 +49,9 @@ class DownloadTest extends TestCase
         $mockResponse = new Response(200, [], $expectedData ?: '');
         $this->mock->append($mockResponse);
 
-        $result = $this->loader->download($url);
+        $result = $this->loader->download($url, $directoryPath, $this->httpClient);
 
-        $this->assertEquals("Page was successfully loaded into {$directoryPath}/{$expectedFilename}\n", $result);
+        $this->assertEquals("{$directoryPath}/{$expectedFilename}", $result);
 
         $this->assertTrue($this->root->hasChild("$expectedFilename"));
 
