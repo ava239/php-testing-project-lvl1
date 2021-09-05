@@ -19,7 +19,7 @@ class Core
         $this->httpClient = $httpClient ?? new Client();
 
         $data = $this->getUrl($url);
-        $fileName = $this->saveFile($data, $url, '.html');
+        $fileName = $this->saveFile($data, $url);
 
         return $fileName;
     }
@@ -29,21 +29,26 @@ class Core
         return $this->httpClient->get($url)->getBody()->getContents();
     }
 
-    private function saveFile(string $data, string $url, string $postfix = ''): string
+    private function saveFile(string $data, string $url): string
     {
-        $fileName = $this->prepareFileName($url) . $postfix;
+        $fileName = $this->prepareFileName($url);
         $filePath = "{$this->outputDir}/{$fileName}";
         file_put_contents($filePath, $data);
         return $filePath;
     }
 
-    private function prepareFileName(string $url): string
+    public function prepareFileName(string $url, string $defaultExt = 'html'): string
     {
         $schema = parse_url($url, PHP_URL_SCHEME);
-        $name = preg_replace(["~$schema://~", '~[^\d\w]~'], ['', '-'], $url);
+        $path = parse_url($url, PHP_URL_PATH);
+        $ext = pathinfo($path, PATHINFO_EXTENSION);
+        $ext = $ext ?: $defaultExt;
+        $replaceExt = $ext ? "~\.{$ext}~" : '~~';
+        $name = preg_replace(["~$schema://~", $replaceExt, '~[^\d\w]~'], ['', '', '-'], $url);
         if ($name === null) {
             throw new Exception('Cant generate filename');
         }
-        return $name;
+        $ext = $ext ? ".{$ext}" : '';
+        return "{$name}{$ext}";
     }
 }

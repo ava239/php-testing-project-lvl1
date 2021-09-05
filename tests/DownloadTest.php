@@ -18,14 +18,25 @@ class DownloadTest extends TestCase
     private MockHandler $mock;
     private Client $httpClient;
     private vfsStreamDirectory $root;
+    private string $rootPath;
     private Generator $faker;
     private Core $loader;
 
-    public function getFixtureFullPath(string $fixtureName): string
+    private function getFixtureFullPath(string $fixtureName): string
     {
         $parts = [__DIR__, 'fixtures', $fixtureName];
         $path = realpath(implode('/', $parts));
         return $path ?: '';
+    }
+
+    private function addMock(string $path): string
+    {
+        $expectedPath = $this->getFixtureFullPath($path);
+        $expectedData = file_get_contents($expectedPath);
+
+        $mockResponse = new Response(200, [], $expectedData ?: '');
+        $this->mock->append($mockResponse);
+        return $expectedData ?: '';
     }
 
     public function setUp(): void
@@ -34,28 +45,69 @@ class DownloadTest extends TestCase
         $this->mock = new MockHandler([]);
         $this->httpClient = new Client(['handler' => HandlerStack::create($this->mock)]);
         $this->root = vfsStream::setup('home');
+        $this->rootPath = vfsStream::url('home');
         $this->loader = new Core();
+    }
+
+    public function testPrepareFilename(): void
+    {
+        $this->assertEquals(
+            'ru-hexlet-io-courses.html',
+            $this->loader->prepareFileName('https://ru.hexlet.io/courses')
+        );
+        $this->assertEquals(
+            'ru-hexlet-io-courses',
+            $this->loader->prepareFileName('https://ru.hexlet.io/courses', '')
+        );
+        $this->assertEquals(
+            'ru-hexlet-io-assets-professions-php.png',
+            $this->loader->prepareFileName('https://ru.hexlet.io/assets/professions/php.png')
+        );
     }
 
     public function testSimpleDownload(): void
     {
-        $directoryPath = vfsStream::url('home');
         $url = $this->faker->url();
-        $expectedPath = $this->getFixtureFullPath('simple.html');
-        $expectedData = file_get_contents($expectedPath);
-        $scheme = parse_url($url, PHP_URL_SCHEME);
-        $expectedFilename = preg_replace(["~$scheme://~", '~[^\d\w]~'], ['', '-'], $url) . '.html';
 
-        $mockResponse = new Response(200, [], $expectedData ?: '');
-        $this->mock->append($mockResponse);
+        $expectedFilename = $this->loader->prepareFileName($url);
 
-        $result = $this->loader->download($url, $directoryPath, $this->httpClient);
+        $expectedData = $this->addMock('html/simple.html');
 
-        $this->assertEquals("{$directoryPath}/{$expectedFilename}", $result);
+        $result = $this->loader->download($url, $this->rootPath, $this->httpClient);
+
+        $this->assertEquals("{$this->rootPath}/{$expectedFilename}", $result);
+        $actualData = file_get_contents("{$this->rootPath}/{$expectedFilename}");
+        $this->assertEquals($expectedData, $actualData);
 
         $this->assertTrue($this->root->hasChild("$expectedFilename"));
+    }
 
-        $actualData = file_get_contents("{$directoryPath}/$expectedFilename");
+    public function testImagesDownload(): void
+    {
+        $url = 'https://ru.hexlet.io/courses';
+
+        $expectedFilename = $this->loader->prepareFileName($url, '');
+
+        $this->addMock('html/with-images.html');
+        $this->addMock('resources/php.png');
+        $expectedPath = $this->getFixtureFullPath('results/with-images.html');
+        $expectedData = file_get_contents($expectedPath);
+
+        $result = $this->loader->download($url, $this->rootPath, $this->httpClient);
+
+        $this->assertEquals("{$this->rootPath}/{$expectedFilename}.html", $result);
+
+        $this->assertTrue($this->root->hasChild("{$expectedFilename}.html"));
+        $actualData = file_get_contents("{$this->rootPath}/{$expectedFilename}.html");
         $this->assertEquals($expectedData, $actualData);
+
+        $this->assertTrue($this->root->hasChild("{$expectedFilename}_files"));
+
+        $imgPath = $this->loader->prepareFileName('https://ru.hexlet.io/assets/professions/php.png');
+        $imgFixture = $this->getFixtureFullPath('resources/php.png');
+        $imgData = file_get_contents($imgFixture);
+        $this->assertTrue($this->root->hasChild("{$expectedFilename}_files/{$imgPath}"));
+        $actualData = file_get_contents("{$this->rootPath}/{$imgPath}");
+        $this->assertEquals($imgData, $actualData);
     }
 }
