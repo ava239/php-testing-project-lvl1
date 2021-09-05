@@ -69,6 +69,15 @@ class DownloadTest extends TestCase
         );
     }
 
+    public function testResourceFilter(): void
+    {
+        $url = $this->faker->url();
+        $this->loader->setBaseUri($url);
+        $this->assertTrue($this->loader->needToDownload('/assets/professions/php.png'));
+        $this->assertTrue($this->loader->needToDownload("{$url}/assets/professions/php.png"));
+        $this->assertFalse($this->loader->needToDownload('https://cdn2.hexlet.io/assets/menu.css'));
+    }
+
     public function testSimpleDownload(): void
     {
         $url = $this->faker->url();
@@ -113,5 +122,48 @@ class DownloadTest extends TestCase
         $this->assertTrue($this->root->hasChild("{$expectedFilename}_files/{$imgPath}"));
         $actualData = file_get_contents("{$this->rootPath}/{$expectedFilename}_files/{$imgPath}");
         $this->assertEquals($imgData, $actualData);
+    }
+
+    public function testResourcesDownload(): void
+    {
+        $url = 'https://ru.hexlet.io/courses';
+
+        $expectedFilename = $this->loader->prepareFileName($url, '');
+
+        $this->addMock('html/with-resources.html');
+        $this->addMock('resources/application.css');
+        $this->addMock('html/with-resources.html');
+        $this->addMock('resources/php.png');
+        $this->addMock('resources/runtime.js');
+        $expectedPath = $this->getFixtureFullPath('results/with-resources.html');
+        $expectedData = file_get_contents($expectedPath);
+
+        $result = $this->loader->download($url, $this->rootPath, $this->httpClient);
+
+        $this->assertEquals("{$this->rootPath}/{$expectedFilename}.html", $result);
+
+        $this->assertTrue($this->root->hasChild("{$expectedFilename}.html"));
+        $actualData = file_get_contents("{$this->rootPath}/{$expectedFilename}.html");
+        $this->assertEquals($expectedData, $actualData);
+
+        $this->assertTrue($this->root->hasChild("{$expectedFilename}_files"));
+
+        $resources = [
+            ['/assets/application.css', 'resources/application.css'],
+            ['/courses', 'results/with-resources.html'],
+            ['/assets/professions/php.png', 'resources/php.png'],
+            ['https://ru.hexlet.io/packs/js/runtime.js', 'resources/runtime.js'],
+        ];
+        foreach ($resources as [$link, $fixture]) {
+            $imgPath = $this->loader->prepareFileName($link);
+            $imgFixture = $this->getFixtureFullPath($fixture);
+            $imgData = file_get_contents($imgFixture);
+            $this->assertTrue(
+                $this->root->hasChild("{$expectedFilename}_files/{$imgPath}"),
+                "{$link} -> {$imgPath} doesnt exist"
+            );
+            $actualData = file_get_contents("{$this->rootPath}/{$expectedFilename}_files/{$imgPath}");
+            $this->assertEquals($imgData, $actualData, "{$imgPath} doesnt match contents");
+        }
     }
 }

@@ -9,6 +9,7 @@ use GuzzleHttp\Client;
 class Core
 {
     private string $outputDir;
+    private string $baseUri;
     private Client $httpClient;
 
     public function download(string $url, string $outputDir, Client $httpClient = null): string
@@ -23,6 +24,8 @@ class Core
             mkdir($this->outputDir);
         }
 
+        $this->setBaseUri($url);
+
         $data = $this->getUrl($url);
         $resources = $this->getResources($data);
         $savedFiles = $this->downloadResources($url, $resources);
@@ -30,6 +33,11 @@ class Core
         $fileName = $this->saveFile($newData, $url);
 
         return $fileName;
+    }
+
+    public function setBaseUri(string $uri): void
+    {
+        $this->baseUri = $uri;
     }
 
     public function getResources(string $html): array
@@ -45,9 +53,21 @@ class Core
     public function downloadResources(string $url, array $resources): array
     {
         $subDir = "{$this->outputDir}/{$this->prepareFileName($url, '')}_files";
-        $paths = collect($resources)->map(fn ($path) => "{$this->normalizeUrl($url, false)}{$path}");
+        $paths = collect($resources)
+            ->filter(fn ($path) => $this->needToDownload($path))
+            ->map(fn ($path) => "{$this->normalizeUrl($url, false)}{$path}");
         $savedFiles = $paths->map(fn ($path) => $this->getResource($path, $subDir));
         return $savedFiles->toArray();
+    }
+
+    public function needToDownload(string $uri): bool
+    {
+        $normalizedUri = $this->normalizeUrl($uri, false);
+        if ($normalizedUri === trim($uri, '/')) {
+            return true;
+        }
+        $normalizedBase = $this->normalizeUrl($this->baseUri, false);
+        return $normalizedBase === $normalizedUri;
     }
 
     public function replaceResourcePaths(string $html, array $links, array $files): string
@@ -75,15 +95,15 @@ class Core
 
     private function normalizeUrl(string $url, bool $usePath = true): string
     {
+        $url = trim($url, '/');
         $parsedUrl = parse_url($url);
         if ($parsedUrl === false || !array_key_exists('scheme', $parsedUrl) || !array_key_exists('host', $parsedUrl)) {
-            throw new Exception("cant parse url {$url}");
+            return $url;
         }
         $path = "{$parsedUrl['scheme']}://{$parsedUrl['host']}";
         $path = isset($parsedUrl['path']) && $parsedUrl['path'] && $usePath
             ? "{$path}{$parsedUrl['path']}"
             : $path;
-        $path = preg_replace('~/$~', '', $path);
         return strtolower($path ?? '');
     }
 
