@@ -5,7 +5,7 @@ console:
 	composer exec --verbose psysh
 
 lint:
-	composer exec --verbose phpcs -- --standard=PSR12 src tests
+	composer exec --verbose phpcs -- --standard=PSR12 src tests --ignore=*/fixtures/*
 	composer exec --verbose phpstan -- --level=8 analyse src tests
 
 lint-fix:
