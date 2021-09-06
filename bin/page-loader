@@ -29,7 +29,8 @@ $args = Docopt::handle($doc, ['version' => '0.0.1']);
 $client = new \GuzzleHttp\Client();
 
 $loader = new \Ava239\Page\Loader\Core();
-$mainPath = $loader->download($args['<url>'], $outputDir, $client);
+$logger = new \Monolog\Logger('page-loader');
+$mainPath = $loader->download($args['<url>'], $outputDir, $client, $logger);
 
 echo "Page was successfully loaded into {$mainPath}\n";
 

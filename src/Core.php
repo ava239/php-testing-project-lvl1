@@ -5,14 +5,24 @@ namespace Ava239\Page\Loader;
 use DiDom\Document;
 use Exception;
 use GuzzleHttp\Client;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 
 class Core
 {
     private string $outputDir;
     private string $baseUri;
     private Client $httpClient;
+    private Logger $logger;
 
-    public function download(string $url, string $outputDir, Client $httpClient = null): string
+    /**
+     * @param  string  $url
+     * @param  string  $outputDir
+     * @param  Client|null  $httpClient
+     * @param  Logger|null  $logger
+     * @return string
+     */
+    public function download($url, $outputDir, $httpClient = null, $logger = null): string
     {
         $realDirpath = realpath($outputDir);
         $this->outputDir = $realDirpath !== false
@@ -23,13 +33,22 @@ class Core
         if (!is_dir($this->outputDir)) {
             mkdir($this->outputDir);
         }
+        $this->logger = $logger ?? new Logger('page-loader');
+        $this->logger->pushHandler(new StreamHandler("{$this->outputDir}/page-loader.log", Logger::DEBUG));
 
+        $this->logger->info("set base URI {$url}");
         $this->setBaseUri($url);
 
+        $this->logger->info("getting data from base URI");
         $data = $this->getUrl($url);
+        $this->logger->info("parse resources list");
         $resources = $this->getResources($data);
+        $this->logger->info("got resources:", $resources);
+        $this->logger->info("download resources");
         $savedFiles = $this->downloadResources($url, $resources);
+        $this->logger->info("replace resources paths in document");
         $newData = $this->replaceResourcePaths($data, $resources, $savedFiles);
+        $this->logger->info("saving document");
         $fileName = $this->saveFile($newData, $url);
 
         return $fileName;
@@ -64,11 +83,13 @@ class Core
     public function downloadResources(string $url, array $resources): array
     {
         $subDir = "{$this->outputDir}/{$this->prepareFileName($url, '')}_files";
+        $this->logger->info("resources dir: {$subDir}");
         $normalizedBase = $this->normalizeUrl($this->baseUri, false);
         $paths = collect($resources)
             ->map(fn ($path) => str_replace($normalizedBase, '', $this->normalizeUrl($path)))
             ->map(fn ($path) => trim($path, '/'))
             ->map(fn ($path) => "{$normalizedBase}/{$path}");
+        $this->logger->info('normalized paths', $paths->toArray());
         $savedFiles = $paths->map(fn ($path) => $this->getResource($path, $subDir));
         return $savedFiles->toArray();
     }
@@ -88,6 +109,7 @@ class Core
         $relativeFiles = collect($files)
             ->map(fn ($filePath) => str_replace("{$this->outputDir}/", '', $filePath))
             ->toArray();
+        $this->logger->info('relative files paths', $relativeFiles);
         return str_replace($links, $relativeFiles, $html);
     }
 
@@ -99,10 +121,12 @@ class Core
     public function getResource(string $url, string $path): string
     {
         if (!is_dir($path)) {
+            $this->logger->info("create dir {$path}");
             mkdir($path);
         }
         $filePath = "{$path}/{$this->prepareFileName($url)}";
         $this->httpClient->request('get', $url, ['sink' => $filePath]);
+        $this->logger->info("downloaded {$url} to {$filePath}");
         return $filePath;
     }
 

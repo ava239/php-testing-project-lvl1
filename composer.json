@@ -31,7 +31,8 @@
     "symfony/string": "^5.1",
     "phpstan/phpstan": "^0.12.65",
     "guzzlehttp/guzzle": "^7.3",
-    "imangazaliev/didom": "^1.18"
+    "imangazaliev/didom": "^1.18",
+    "monolog/monolog": "^2.3"
   },
   "require-dev": {
     "psy/psysh": "@stable",
