@@ -67,6 +67,10 @@ class DownloadTest extends TestCase
             'ru-hexlet-io-assets-professions-php.png',
             $this->loader->prepareFileName('https://ru.hexlet.io/assets/professions/php.png')
         );
+        $this->assertEquals(
+            'ru-hexlet-io-packs-js-runtime.js',
+            $this->loader->prepareFileName('https://ru.hexlet.io/packs/js/runtime.js')
+        );
     }
 
     public function testResourceFilter(): void
@@ -131,9 +135,9 @@ class DownloadTest extends TestCase
         $expectedFilename = $this->loader->prepareFileName($url, '');
 
         $this->addMock('html/with-resources.html');
+        $this->addMock('resources/php.png');
         $this->addMock('resources/application.css');
         $this->addMock('html/with-resources.html');
-        $this->addMock('resources/php.png');
         $this->addMock('resources/runtime.js');
         $expectedPath = $this->getFixtureFullPath('results/with-resources.html');
         $expectedData = file_get_contents($expectedPath);
@@ -149,21 +153,21 @@ class DownloadTest extends TestCase
         $this->assertTrue($this->root->hasChild("{$expectedFilename}_files"));
 
         $resources = [
-            ['/assets/application.css', 'resources/application.css'],
-            ['/courses', 'results/with-resources.html'],
-            ['/assets/professions/php.png', 'resources/php.png'],
+            ['https://ru.hexlet.io/assets/professions/php.png', 'resources/php.png'],
+            ['https://ru.hexlet.io/assets/application.css', 'resources/application.css'],
+            ['https://ru.hexlet.io/courses', 'html/with-resources.html'],
             ['https://ru.hexlet.io/packs/js/runtime.js', 'resources/runtime.js'],
         ];
         foreach ($resources as [$link, $fixture]) {
-            $imgPath = $this->loader->prepareFileName($link);
-            $imgFixture = $this->getFixtureFullPath($fixture);
-            $imgData = file_get_contents($imgFixture);
+            $asseetPath = $this->loader->prepareFileName($link);
+            $assetFixture = $this->getFixtureFullPath($fixture);
+            $assetData = file_get_contents($assetFixture);
             $this->assertTrue(
-                $this->root->hasChild("{$expectedFilename}_files/{$imgPath}"),
-                "{$link} -> {$imgPath} doesnt exist"
+                $this->root->hasChild("{$expectedFilename}_files/{$asseetPath}"),
+                "{$link} -> {$expectedFilename}_files/{$asseetPath} doesnt exist"
             );
-            $actualData = file_get_contents("{$this->rootPath}/{$expectedFilename}_files/{$imgPath}");
-            $this->assertEquals($imgData, $actualData, "{$imgPath} doesnt match contents");
+            $actualData = file_get_contents("{$this->rootPath}/{$expectedFilename}_files/{$asseetPath}");
+            $this->assertEquals($assetData, $actualData, "{$asseetPath} doesnt match contents");
         }
     }
 }

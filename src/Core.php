@@ -47,15 +47,28 @@ class Core
             $dom->loadHtml($html);
         }
         $images = $dom->find('img');
-        return collect($images)->map(fn ($image) => $image->getAttribute('src'))->toArray();
+        $imageSrcs = collect($images)->map(fn ($image) => $image->getAttribute('src'));
+        $links = $dom->find('link');
+        $linkSrcs = collect($links)->map(fn ($link) => $link->getAttribute('href'));
+        $scripts = $dom->find('script');
+        $scriptSrcs = collect($scripts)->map(fn ($script) => $script->getAttribute('src'));
+        return $imageSrcs
+            ->merge($linkSrcs)
+            ->merge($scriptSrcs)
+            ->filter()
+            ->filter(fn ($path) => $this->needToDownload($path))
+            ->values()
+            ->toArray();
     }
 
     public function downloadResources(string $url, array $resources): array
     {
         $subDir = "{$this->outputDir}/{$this->prepareFileName($url, '')}_files";
+        $normalizedBase = $this->normalizeUrl($this->baseUri, false);
         $paths = collect($resources)
-            ->filter(fn ($path) => $this->needToDownload($path))
-            ->map(fn ($path) => "{$this->normalizeUrl($url, false)}{$path}");
+            ->map(fn ($path) => str_replace($normalizedBase, '', $this->normalizeUrl($path)))
+            ->map(fn ($path) => trim($path, '/'))
+            ->map(fn ($path) => "{$normalizedBase}/{$path}");
         $savedFiles = $paths->map(fn ($path) => $this->getResource($path, $subDir));
         return $savedFiles->toArray();
     }
