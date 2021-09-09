@@ -15,14 +15,7 @@ class Core
     private Client $httpClient;
     private Logger $logger;
 
-    /**
-     * @param  string  $url
-     * @param  string  $outputDir
-     * @param  Client|null  $httpClient
-     * @param  Logger|null  $logger
-     * @return string
-     */
-    public function download($url, $outputDir, $httpClient = null, $logger = null): string
+    public function download(string $url, string $outputDir, Client $httpClient = null, Logger $logger = null): string
     {
         $realDirpath = realpath($outputDir);
         $this->outputDir = $realDirpath !== false
@@ -148,7 +141,10 @@ class Core
     {
         $fileName = $this->prepareFileName($url);
         $filePath = "{$this->outputDir}/{$fileName}";
-        file_put_contents($filePath, $data);
+        $saved = file_put_contents($filePath, $data);
+        if (!$saved) {
+            throw new Exception("cant write {$filePath}");
+        }
         return $filePath;
     }
 
@@ -164,9 +160,6 @@ class Core
             ['', '', '-'],
             $this->normalizeUrl($url, $usePath)
         );
-        if ($name === null) {
-            throw new Exception('Cant generate filename');
-        }
         $ext = $ext ? ".{$ext}" : '';
         return "{$name}{$ext}";
     }

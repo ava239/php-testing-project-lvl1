@@ -26,9 +26,9 @@ class DownloadTest extends TestCase
         return $path ?: '';
     }
 
-    private function addMock(string $path): string
+    private function addMockAnswer(string $fixturePath): string
     {
-        $expectedPath = $this->getFixtureFullPath($path);
+        $expectedPath = $this->getFixtureFullPath($fixturePath);
         $expectedData = file_get_contents($expectedPath);
 
         $mockResponse = new Response(200, [], $expectedData ?: '');
@@ -51,11 +51,11 @@ class DownloadTest extends TestCase
 
         $expectedFilename = $this->loader->prepareFileName($url, '');
 
-        $this->addMock('html/with-resources.html');
-        $this->addMock('resources/php.png');
-        $this->addMock('resources/application.css');
-        $this->addMock('html/with-resources.html');
-        $this->addMock('resources/runtime.js');
+        $this->addMockAnswer('html/with-resources.html');
+        $this->addMockAnswer('resources/php.png');
+        $this->addMockAnswer('resources/application.css');
+        $this->addMockAnswer('html/with-resources.html');
+        $this->addMockAnswer('resources/runtime.js');
         $expectedPath = $this->getFixtureFullPath('results/with-resources.html');
         $expectedData = file_get_contents($expectedPath);
 
@@ -86,5 +86,27 @@ class DownloadTest extends TestCase
             $actualData = file_get_contents("{$this->rootPath}/{$expectedFilename}_files/{$asseetPath}");
             $this->assertEquals($assetData, $actualData, "{$asseetPath} doesnt match contents");
         }
+    }
+
+    public function testNetworkError(): void
+    {
+        $this->addMockAnswer('html/with-resources.html');
+        $this->mock->append(new Response(404));
+
+        $this->expectException(\GuzzleHttp\Exception\RequestException::class);
+        $this->expectExceptionMessage('https://ru.hexlet.io/assets/professions/php.png');
+        $this->loader->download('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient);
+    }
+
+    public function testSaveError(): void
+    {
+        $this->addMockAnswer('html/empty.html');
+        $expectedFilename = $this->loader->prepareFileName('https://ru.hexlet.io/courses', '');
+        $dirName = "{$this->rootPath}/{$expectedFilename}_files";
+        vfsStream::newDirectory($dirName, 0111);
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('home/ru-hexlet-io-courses.html');
+        $this->loader->download('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient);
     }
 }
