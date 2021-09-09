@@ -31,7 +31,7 @@ class Core
         $this->httpClient = $httpClient ?? new Client();
 
         if (!is_dir($this->outputDir)) {
-            mkdir($this->outputDir);
+            mkdir($this->outputDir, 0777, true);
         }
         $this->logger = $logger ?? new Logger('page-loader');
         $this->logger->pushHandler(new StreamHandler("{$this->outputDir}/page-loader.log", Logger::DEBUG));
