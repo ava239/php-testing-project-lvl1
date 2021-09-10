@@ -30,6 +30,8 @@ $client = new \GuzzleHttp\Client();
 
 $loader = new \Ava239\Page\Loader\Core();
 $logger = new \Monolog\Logger('page-loader');
+$handler = new \Monolog\Handler\StreamHandler("{$outputDir}/page-loader.log", \Monolog\Logger::DEBUG);
+$logger->pushHandler($handler);
 $mainPath = $loader->download($args['<url>'], $outputDir, $client, $logger);
 
 echo "Page was successfully loaded into {$mainPath}\n";

@@ -7,6 +7,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +20,7 @@ class DownloadTest extends TestCase
     private vfsStreamDirectory $root;
     private string $rootPath;
     private Core $loader;
+    private Logger $logger;
 
     private function getFixtureFullPath(string $fixtureName): string
     {
@@ -26,30 +29,31 @@ class DownloadTest extends TestCase
         return $path ?: '';
     }
 
-    private function addMockAnswer(string $fixturePath): string
+    private function addMockAnswer(string $fixturePath): void
     {
         $expectedPath = $this->getFixtureFullPath($fixturePath);
         $expectedData = file_get_contents($expectedPath);
 
         $mockResponse = new Response(200, [], $expectedData ?: '');
         $this->mock->append($mockResponse);
-        return $expectedData ?: '';
     }
 
     public function setUp(): void
     {
         $this->mock = new MockHandler([]);
         $this->httpClient = new Client(['handler' => HandlerStack::create($this->mock)]);
-        $this->root = vfsStream::setup('home');
         $this->rootPath = vfsStream::url('home');
+        $this->root = vfsStream::setup('home');
         $this->loader = new Core();
+        $this->logger = new Logger('test');
+        //$this->logger->pushHandler(new StreamHandler("php://output", Logger::DEBUG));
     }
 
     public function testDownload(): void
     {
         $url = 'https://ru.hexlet.io/courses';
 
-        $expectedFilename = $this->loader->prepareFileName($url, '');
+        $expectedFilename = 'ru-hexlet-io-courses';
 
         $this->addMockAnswer('html/with-resources.html');
         $this->addMockAnswer('resources/php.png');
@@ -59,7 +63,7 @@ class DownloadTest extends TestCase
         $expectedPath = $this->getFixtureFullPath('results/with-resources.html');
         $expectedData = file_get_contents($expectedPath);
 
-        $result = $this->loader->download($url, $this->rootPath, $this->httpClient);
+        $result = $this->loader->download($url, $this->rootPath, $this->httpClient, $this->logger);
 
         $this->assertEquals("{$this->rootPath}/{$expectedFilename}.html", $result);
 
@@ -88,25 +92,71 @@ class DownloadTest extends TestCase
         }
     }
 
-    public function testNetworkError(): void
+    /**
+     * @dataProvider networkErrorsProvider
+     */
+    public function testNetworkError(int $code): void
     {
-        $this->addMockAnswer('html/with-resources.html');
-        $this->mock->append(new Response(404));
+        $this->logger->info("testing network error when got response with code {$code}");
+        $this->mock->append(new Response($code));
 
-        $this->expectException(\GuzzleHttp\Exception\RequestException::class);
-        $this->expectExceptionMessage('https://ru.hexlet.io/assets/professions/php.png');
-        $this->loader->download('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient);
+        $this->expectException(\GuzzleHttp\Exception\TransferException::class);
+        $this->expectExceptionMessage('https://ru.hexlet.io/courses');
+        $this->loader->download('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
+    }
+
+    /**
+     * @dataProvider networkErrorsProvider
+     */
+    public function testResourceNetworkError(int $code): void
+    {
+        $this->logger->info("testing resource network error when got response with code {$code}");
+        $this->addMockAnswer('html/with-resources.html');
+        $this->mock->append(new Response($code));
+
+        $this->expectException(\GuzzleHttp\Exception\TransferException::class);
+        $this->expectExceptionMessage("https://ru.hexlet.io/assets/professions/php.png");
+        $this->loader->download('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
+    }
+
+    public function networkErrorsProvider(): array
+    {
+        return [[400], [401], [402], [403], [404], [500], [503], [301], [302], [201]];
     }
 
     public function testSaveError(): void
     {
-        $this->addMockAnswer('html/empty.html');
-        $expectedFilename = $this->loader->prepareFileName('https://ru.hexlet.io/courses', '');
-        $dirName = "{$this->rootPath}/{$expectedFilename}_files";
-        vfsStream::newDirectory($dirName, 0111);
+        $this->addMockAnswer('html/with-resources.html');
+        $this->addMockAnswer('resources/php.png');
+        $this->addMockAnswer('resources/application.css');
+        $this->addMockAnswer('html/with-resources.html');
+        $this->addMockAnswer('resources/runtime.js');
 
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('home/ru-hexlet-io-courses.html');
-        $this->loader->download('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient);
+        $dirName = "{$this->rootPath}/ru-hexlet-io-courses_files";
+        mkdir($dirName, 0111);
+
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('ru-hexlet-io-courses_files is not writable');
+        $this->loader->download('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
+    }
+
+    public function testDirError(): void
+    {
+        $this->addMockAnswer('html/empty.html');
+
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('abc does not exist');
+        $this->loader->download('https://ru.hexlet.io/courses', 'abc', $this->httpClient, $this->logger);
+    }
+
+    public function testWritableError(): void
+    {
+        $this->addMockAnswer('html/empty.html');
+        $dirName = "{$this->rootPath}/x";
+        mkdir($dirName, 0111);
+
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('is not writable');
+        $this->loader->download('https://ru.hexlet.io/courses', $dirName, $this->httpClient, $this->logger);
     }
 }

@@ -3,9 +3,9 @@
 namespace Ava239\Page\Loader;
 
 use DiDom\Document;
-use Exception;
+use Error;
 use GuzzleHttp\Client;
-use Monolog\Handler\StreamHandler;
+use GuzzleHttp\Exception\TransferException;
 use Monolog\Logger;
 
 class Core
@@ -15,35 +15,33 @@ class Core
     private Client $httpClient;
     private Logger $logger;
 
-    public function download(string $url, string $outputDir, Client $httpClient = null, Logger $logger = null): string
+    public function download(string $url, string $outputDir, Client $httpClient, Logger $logger): string
     {
-        $realDirpath = realpath($outputDir);
-        $this->outputDir = $realDirpath !== false
-            ? $realDirpath
-            : $outputDir;
-        $this->httpClient = $httpClient ?? new Client();
-
-        if (!is_dir($this->outputDir)) {
-            mkdir($this->outputDir, 0777, true);
+        if (!is_dir($outputDir)) {
+            throw new Error("output directory {$outputDir} does not exist");
         }
-        $this->logger = $logger ?? new Logger('page-loader');
-        $this->logger->pushHandler(new StreamHandler("{$this->outputDir}/page-loader.log", Logger::DEBUG));
+        if (!is_writable($outputDir)) {
+            throw new Error("output directory {$outputDir} is not writable");
+        }
+        $this->outputDir = $outputDir;
+        $this->httpClient = $httpClient;
+        $this->logger = $logger;
 
         $this->logger->info("set base URI {$url}");
         $this->setBaseUri($url);
 
         $this->logger->info("getting data from base URI");
         $data = $this->getUrl($url);
-        $this->logger->info("parse resources list");
+        $this->logger->info("start parsing resource list");
         $resources = $this->getResources($data);
-        $this->logger->info("got resources:", $resources);
-        $this->logger->info("download resources");
+        $this->logger->info("parsed resource list:", $resources);
+        $this->logger->info("start resources handling");
         $savedFiles = $this->downloadResources($url, $resources);
-        $this->logger->info("replace resources paths in document");
+        $this->logger->info("completed resources handling");
+        $this->logger->info("replace resource paths in document");
         $newData = $this->replaceResourcePaths($data, $resources, $savedFiles);
-        $this->logger->info("saving document");
         $fileName = $this->saveFile($newData, $url);
-
+        $this->logger->info("return {$fileName}");
         return $fileName;
     }
 
@@ -82,8 +80,10 @@ class Core
             ->map(fn ($path) => str_replace($normalizedBase, '', $this->normalizeUrl($path)))
             ->map(fn ($path) => trim($path, '/'))
             ->map(fn ($path) => "{$normalizedBase}/{$path}");
-        $this->logger->info('normalized paths', $paths->toArray());
+        $this->logger->info('got normalized resources paths', $paths->toArray());
+        $this->logger->info("start resources download");
         $savedFiles = $paths->map(fn ($path) => $this->getResource($path, $subDir));
+        $this->logger->info("completed resources download");
         return $savedFiles->toArray();
     }
 
@@ -102,13 +102,19 @@ class Core
         $relativeFiles = collect($files)
             ->map(fn ($filePath) => str_replace("{$this->outputDir}/", '', $filePath))
             ->toArray();
-        $this->logger->info('relative files paths', $relativeFiles);
+        $this->logger->info('got relative files paths', $relativeFiles);
         return str_replace($links, $relativeFiles, $html);
     }
 
     public function getUrl(string $url): string
     {
-        return $this->httpClient->get($url)->getBody()->getContents();
+        $response = $this->httpClient->get($url, ['allow_redirects' => false]);
+        $code = $response->getStatusCode();
+        $this->logger->info("{$url}: got response with code {$code}");
+        if ($code !== 200) {
+            throw new TransferException("received response with status code {$code} while accessing {$url}");
+        }
+        return $response->getBody()->getContents();
     }
 
     public function getResource(string $url, string $path): string
@@ -117,8 +123,16 @@ class Core
             $this->logger->info("create dir {$path}");
             mkdir($path);
         }
+        if (!is_writable($path)) {
+            throw new Error("{$path} is not writable");
+        }
         $filePath = "{$path}/{$this->prepareFileName($url)}";
-        $this->httpClient->request('get', $url, ['sink' => $filePath]);
+        $response = $this->httpClient->request('get', $url, ['sink' => $filePath, 'allow_redirects' => false]);
+        $code = $response->getStatusCode();
+        $this->logger->info("{$url}: got response with code {$code}");
+        if ($code !== 200) {
+            throw new TransferException("received response with status code {$code} while accessing {$url}");
+        }
         $this->logger->info("downloaded {$url} to {$filePath}");
         return $filePath;
     }
@@ -141,10 +155,8 @@ class Core
     {
         $fileName = $this->prepareFileName($url);
         $filePath = "{$this->outputDir}/{$fileName}";
-        $saved = file_put_contents($filePath, $data);
-        if (!$saved) {
-            throw new Exception("cant write {$filePath}");
-        }
+        $this->logger->info("saving file to {$filePath}");
+        file_put_contents($filePath, $data);
         return $filePath;
     }
 

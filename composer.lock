@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6377c2ba0f2f7342ae0730eb424bdd56",
+    "content-hash": "69191f5efd3a01943e12acf2f2024a3a",
     "packages": [
         {
             "name": "docopt/docopt",
@@ -1873,71 +1873,6 @@
                 }
             ],
             "time": "2020-11-10T18:47:58+00:00"
-        },
-        {
-            "name": "fakerphp/faker",
-            "version": "v1.15.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/FakerPHP/Faker.git",
-                "reference": "89c6201c74db25fa759ff16e78a4d8f32547770e"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/FakerPHP/Faker/zipball/89c6201c74db25fa759ff16e78a4d8f32547770e",
-                "reference": "89c6201c74db25fa759ff16e78a4d8f32547770e",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^7.1 || ^8.0",
-                "psr/container": "^1.0",
-                "symfony/deprecation-contracts": "^2.2"
-            },
-            "conflict": {
-                "fzaninotto/faker": "*"
-            },
-            "require-dev": {
-                "bamarni/composer-bin-plugin": "^1.4.1",
-                "ext-intl": "*",
-                "symfony/phpunit-bridge": "^4.4 || ^5.2"
-            },
-            "suggest": {
-                "ext-curl": "Required by Faker\\Provider\\Image to download images.",
-                "ext-dom": "Required by Faker\\Provider\\HtmlLorem for generating random HTML.",
-                "ext-iconv": "Required by Faker\\Provider\\ru_RU\\Text::realText() for generating real Russian text.",
-                "ext-mbstring": "Required for multibyte Unicode string functionality."
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-main": "v1.15-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Faker\\": "src/Faker/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "François Zaninotto"
-                }
-            ],
-            "description": "Faker is a PHP library that generates fake data for you.",
-            "keywords": [
-                "data",
-                "faker",
-                "fixtures"
-            ],
-            "support": {
-                "issues": "https://github.com/FakerPHP/Faker/issues",
-                "source": "https://github.com/FakerPHP/Faker/tree/v1.15.0"
-            },
-            "time": "2021-07-06T20:39:40+00:00"
         },
         {
             "name": "mikey179/vfsstream",
@@ -4047,6 +3982,44 @@
                 }
             ],
             "time": "2020-09-28T06:39:44+00:00"
+        },
+        {
+            "name": "sempro/phpunit-pretty-print",
+            "version": "1.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/s360digital/phpunit-pretty-print.git",
+                "reference": "fa623aa8a17aece4a2b69e54b07a5e37572d1f1d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/s360digital/phpunit-pretty-print/zipball/fa623aa8a17aece4a2b69e54b07a5e37572d1f1d",
+                "reference": "fa623aa8a17aece4a2b69e54b07a5e37572d1f1d",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1.0",
+                "phpunit/phpunit": "^7 || ^8 || ^9"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.16"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Sempro\\PHPUnitPrettyPrinter\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Prettify PHPUnit output",
+            "support": {
+                "issues": "https://github.com/s360digital/phpunit-pretty-print/issues",
+                "source": "https://github.com/s360digital/phpunit-pretty-print/tree/1.4.0"
+            },
+            "time": "2021-01-04T13:25:10+00:00"
         },
         {
             "name": "squizlabs/php_codesniffer",
