@@ -31,9 +31,8 @@ $logger = new \Monolog\Logger('page-loader');
 $handler = new \Monolog\Handler\StreamHandler("{$outputDir}/page-loader.log", \Monolog\Logger::DEBUG);
 $logger->pushHandler($handler);
 
-$loader = new \Ava239\Page\Loader\Core();
 try {
-    $mainPath = $loader->download($args['<url>'], $outputDir, $client, $logger);
+    $mainPath = \Downloader\Downloader\downloadPage($args['<url>'], $outputDir, $client, $logger);
 } catch (\Error $e) {
     fwrite(STDERR, $e->getMessage());
     fwrite(STDERR, "\n");

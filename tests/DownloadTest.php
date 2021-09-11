@@ -1,8 +1,8 @@
 <?php
 
-namespace Ava239\Page\Loader\Tests;
+namespace Downloader\Downloader\Tests;
 
-use Ava239\Page\Loader\Core;
+use Downloader\Downloader;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -19,7 +19,6 @@ class DownloadTest extends TestCase
     private Client $httpClient;
     private vfsStreamDirectory $root;
     private string $rootPath;
-    private Core $loader;
     private Logger $logger;
 
     private function getFixtureFullPath(string $fixtureName): string
@@ -44,7 +43,6 @@ class DownloadTest extends TestCase
         $this->httpClient = new Client(['handler' => HandlerStack::create($this->mock)]);
         $this->rootPath = vfsStream::url('home');
         $this->root = vfsStream::setup('home');
-        $this->loader = new Core();
         $this->logger = new Logger('test');
         if (getenv('mode') === 'DEBUG') {
             $this->logger->pushHandler(new StreamHandler("php://output", Logger::DEBUG));
@@ -65,7 +63,7 @@ class DownloadTest extends TestCase
         $expectedPath = $this->getFixtureFullPath('results/with-resources.html');
         $expectedData = file_get_contents($expectedPath);
 
-        $result = $this->loader->download($url, $this->rootPath, $this->httpClient, $this->logger);
+        $result = Downloader\downloadPage($url, $this->rootPath, $this->httpClient, $this->logger);
 
         $this->assertEquals("{$this->rootPath}/{$expectedFilename}.html", $result);
 
@@ -82,7 +80,7 @@ class DownloadTest extends TestCase
             ['https://ru.hexlet.io/packs/js/runtime.js', 'resources/runtime.js'],
         ];
         foreach ($resources as [$link, $fixture]) {
-            $asseetPath = $this->loader->prepareFileName($link);
+            $asseetPath = Downloader\prepareFileName($link);
             $assetFixture = $this->getFixtureFullPath($fixture);
             $assetData = file_get_contents($assetFixture);
             $this->assertTrue(
@@ -104,7 +102,7 @@ class DownloadTest extends TestCase
 
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('https://ru.hexlet.io/courses');
-        $this->loader->download('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
+        Downloader\downloadPage('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
     }
 
     /**
@@ -118,7 +116,7 @@ class DownloadTest extends TestCase
 
         $this->expectException(\Error::class);
         $this->expectExceptionMessage("https://ru.hexlet.io/assets/professions/php.png");
-        $this->loader->download('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
+        Downloader\downloadPage('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
     }
 
     public function networkErrorsProvider(): array
@@ -139,7 +137,7 @@ class DownloadTest extends TestCase
 
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('ru-hexlet-io-courses_files is not writable');
-        $this->loader->download('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
+        Downloader\downloadPage('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
     }
 
     public function testDirError(): void
@@ -148,7 +146,7 @@ class DownloadTest extends TestCase
 
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('abc does not exist');
-        $this->loader->download('https://ru.hexlet.io/courses', 'abc', $this->httpClient, $this->logger);
+        Downloader\downloadPage('https://ru.hexlet.io/courses', 'abc', $this->httpClient, $this->logger);
     }
 
     public function testWritableError(): void
@@ -159,6 +157,6 @@ class DownloadTest extends TestCase
 
         $this->expectException(\Error::class);
         $this->expectExceptionMessage('is not writable');
-        $this->loader->download('https://ru.hexlet.io/courses', $dirName, $this->httpClient, $this->logger);
+        Downloader\downloadPage('https://ru.hexlet.io/courses', $dirName, $this->httpClient, $this->logger);
     }
 }

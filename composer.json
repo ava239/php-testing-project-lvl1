@@ -17,9 +17,11 @@
     "phpcs": "phpcs"
   },
   "autoload": {
+    "files": [
+      "src/Core.php"
+    ],
     "psr-4": {
-      "Ava239\\Page\\Loader\\": "src",
-      "Ava239\\Page\\Loader\\Tests\\": "tests"
+      "Downloader\\Downloader\\Tests\\": "tests"
     }
   },
   "require": {
