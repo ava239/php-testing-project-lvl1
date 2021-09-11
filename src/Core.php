@@ -11,10 +11,10 @@ use Monolog\Logger;
  * @param  string  $url
  * @param  string  $outputDir
  * @param string|Client $clientClass
- * @param  Logger  $logger
+ * @param  Logger|null  $logger
  * @return string
  */
-function downloadPage(string $url, string $outputDir, $clientClass, Logger $logger): string
+function downloadPage(string $url, string $outputDir, $clientClass, Logger $logger = null): string
 {
     if (!is_dir($outputDir)) {
         throw new Error("output directory {$outputDir} does not exist");
@@ -25,6 +25,7 @@ function downloadPage(string $url, string $outputDir, $clientClass, Logger $logg
     $httpClient = is_string($clientClass)
         ? new $clientClass()
         : $clientClass;
+    $logger = $logger ?? new Logger('empty');
 
     $logger->info("getting data from {$url}");
     $data = getUrl($url, $httpClient, $logger);
