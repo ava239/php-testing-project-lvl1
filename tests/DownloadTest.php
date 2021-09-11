@@ -46,7 +46,9 @@ class DownloadTest extends TestCase
         $this->root = vfsStream::setup('home');
         $this->loader = new Core();
         $this->logger = new Logger('test');
-        //$this->logger->pushHandler(new StreamHandler("php://output", Logger::DEBUG));
+        if (getenv('mode') === 'DEBUG') {
+            $this->logger->pushHandler(new StreamHandler("php://output", Logger::DEBUG));
+        }
     }
 
     public function testDownload(): void
@@ -100,7 +102,7 @@ class DownloadTest extends TestCase
         $this->logger->info("testing network error when got response with code {$code}");
         $this->mock->append(new Response($code));
 
-        $this->expectException(\GuzzleHttp\Exception\TransferException::class);
+        $this->expectException(\Error::class);
         $this->expectExceptionMessage('https://ru.hexlet.io/courses');
         $this->loader->download('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
     }
@@ -114,7 +116,7 @@ class DownloadTest extends TestCase
         $this->addMockAnswer('html/with-resources.html');
         $this->mock->append(new Response($code));
 
-        $this->expectException(\GuzzleHttp\Exception\TransferException::class);
+        $this->expectException(\Error::class);
         $this->expectExceptionMessage("https://ru.hexlet.io/assets/professions/php.png");
         $this->loader->download('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
     }

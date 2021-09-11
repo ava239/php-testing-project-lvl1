@@ -108,11 +108,11 @@ class Core
 
     public function getUrl(string $url): string
     {
-        $response = $this->httpClient->get($url, ['allow_redirects' => false]);
+        $response = $this->httpClient->get($url, ['allow_redirects' => false, 'http_errors' => false]);
         $code = $response->getStatusCode();
         $this->logger->info("{$url}: got response with code {$code}");
         if ($code !== 200) {
-            throw new TransferException("received response with status code {$code} while accessing {$url}");
+            throw new Error("received response with status code {$code} while accessing {$url}");
         }
         return $response->getBody()->getContents();
     }
@@ -127,11 +127,15 @@ class Core
             throw new Error("{$path} is not writable");
         }
         $filePath = "{$path}/{$this->prepareFileName($url)}";
-        $response = $this->httpClient->request('get', $url, ['sink' => $filePath, 'allow_redirects' => false]);
+        $response = $this->httpClient->request(
+            'get',
+            $url,
+            ['sink' => $filePath, 'allow_redirects' => false, 'http_errors' => false]
+        );
         $code = $response->getStatusCode();
         $this->logger->info("{$url}: got response with code {$code}");
         if ($code !== 200) {
-            throw new TransferException("received response with status code {$code} while accessing {$url}");
+            throw new Error("received response with status code {$code} while accessing {$url}");
         }
         $this->logger->info("downloaded {$url} to {$filePath}");
         return $filePath;
