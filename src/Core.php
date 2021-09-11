@@ -7,7 +7,14 @@ use Error;
 use GuzzleHttp\Client;
 use Monolog\Logger;
 
-function downloadPage(string $url, string $outputDir, Client $httpClient, Logger $logger): string
+/**
+ * @param  string  $url
+ * @param  string  $outputDir
+ * @param string|Client $clientClass
+ * @param  Logger  $logger
+ * @return string
+ */
+function downloadPage(string $url, string $outputDir, $clientClass, Logger $logger): string
 {
     if (!is_dir($outputDir)) {
         throw new Error("output directory {$outputDir} does not exist");
@@ -15,6 +22,9 @@ function downloadPage(string $url, string $outputDir, Client $httpClient, Logger
     if (!is_writable($outputDir)) {
         throw new Error("output directory {$outputDir} is not writable");
     }
+    $httpClient = is_string($clientClass)
+        ? new $clientClass()
+        : $clientClass;
 
     $logger->info("getting data from {$url}");
     $data = getUrl($url, $httpClient, $logger);
