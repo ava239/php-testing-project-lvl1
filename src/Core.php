@@ -118,6 +118,7 @@ function getUrl(string $url, $clientClass, Logger $logger): string
         : $clientClass;
 
     $response = $httpClient->get($url, ['allow_redirects' => false, 'http_errors' => false]);
+    print_r($response);
     $code = $response->getStatusCode();
     $logger->info("{$url}: got response with code {$code}");
     if ($code !== 200) {
