@@ -118,13 +118,12 @@ function getUrl(string $url, $clientClass, Logger $logger): string
         : $clientClass;
 
     $response = $httpClient->get($url, ['allow_redirects' => false, 'http_errors' => false]);
-    try {
+    if (is_object($response) && method_exists($response, 'getStatusCode')) {
         $code = $response->getStatusCode();
         $logger->info("{$url}: got response with code {$code}");
         if ($code !== 200) {
             throw new Error("received response with status code {$code} while accessing {$url}");
         }
-    } catch (\Exception $e) {
     }
     return $response->getBody()->getContents();
 }
@@ -156,13 +155,12 @@ function getResource(string $url, string $path, Logger $logger, $clientClass): s
         $url,
         ['sink' => $filePath, 'allow_redirects' => false, 'http_errors' => false]
     );
-    try {
+    if (is_object($response) && method_exists($response, 'getStatusCode')) {
         $code = $response->getStatusCode();
         $logger->info("{$url}: got response with code {$code}");
         if ($code !== 200) {
             throw new Error("received response with status code {$code} while accessing {$url}");
         }
-    } catch (\Exception $e) {
     }
     $logger->info("downloaded {$url} to {$filePath}");
     return $filePath;
