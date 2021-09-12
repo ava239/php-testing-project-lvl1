@@ -26,14 +26,19 @@ function downloadPage(string $url, string $outputDir, $clientClass, Logger $logg
 
     $logger = $logger ?? (new Logger('empty'))->pushHandler(new StreamHandler("php://output", Logger::DEBUG));
 
+    /** @var Client $httpClient */
+    $httpClient = is_string($clientClass)
+        ? new $clientClass()
+        : $clientClass;
+
     $logger->info("getting data from {$url}");
-    $data = getUrl($url, $clientClass, $logger);
+    $data = getUrl($url, $httpClient, $logger);
     $logger->info("start parsing resource list");
     $resources = gatherResources($data, $url);
     $paths = collect($resources)->map(fn($data) => $data[0])->toArray();
     $logger->info("parsed resource list:", $paths);
     $logger->info("start resources handling");
-    $savedFiles = downloadResources($url, $paths, $outputDir, $logger, $clientClass);
+    $savedFiles = downloadResources($url, $paths, $outputDir, $logger, $httpClient);
     $logger->info("completed resources handling");
     $logger->info("replace resource paths in document");
     replaceResourcePaths($resources, $savedFiles, $outputDir, $logger);
@@ -57,15 +62,7 @@ function gatherResources(Document $dom, string $baseUri): array
         ->toArray();
 }
 
-/**
- * @param  string  $url
- * @param  array  $resources
- * @param  string  $outputDir
- * @param  Logger  $logger
- * @param string|Client $clientClass
- * @return array
- */
-function downloadResources(string $url, array $resources, string $outputDir, Logger $logger, $clientClass): array
+function downloadResources(string $url, array $resources, string $outputDir, Logger $logger, Client $httpClient): array
 {
     $filename = prepareFileName($url, '');
     $subDir = "{$outputDir}/{$filename}_files";
@@ -77,7 +74,7 @@ function downloadResources(string $url, array $resources, string $outputDir, Log
         ->map(fn($path) => "{$normalizedBase}/{$path}");
     $logger->info('got normalized resources paths', $paths->toArray());
     $logger->info("start resources download");
-    $savedFiles = $paths->map(fn($path) => getResource($path, $subDir, $logger, $clientClass));
+    $savedFiles = $paths->map(fn($path) => getResource($path, $subDir, $logger, $httpClient));
     $logger->info("completed resources download");
     return $savedFiles->toArray();
 }
@@ -110,18 +107,8 @@ function replaceResourcePaths(array $links, array $files, string $outputDir, Log
     $logger->info('prepared replaced tags', $replacedLinks);
 }
 
-/**
- * @param  string  $url
- * @param  string|Client  $clientClass
- * @param  Logger  $logger
- * @return Document
- */
-function getUrl(string $url, $clientClass, Logger $logger): Document
+function getUrl(string $url, Client $httpClient, Logger $logger): Document
 {
-    $httpClient = is_string($clientClass)
-        ? new $clientClass()
-        : $clientClass;
-
     $response = $httpClient->get($url, ['allow_redirects' => false, 'http_errors' => false]);
     if (is_object($response) && method_exists($response, 'getStatusCode')) {
         $code = $response->getStatusCode();
@@ -139,19 +126,8 @@ function getUrl(string $url, $clientClass, Logger $logger): Document
     return $dom;
 }
 
-/**
- * @param  string  $url
- * @param  string  $path
- * @param  Logger  $logger
- * @param string|Client $clientClass
- * @return string
- */
-function getResource(string $url, string $path, Logger $logger, $clientClass): string
+function getResource(string $url, string $path, Logger $logger, Client $httpClient): string
 {
-    $httpClient = is_string($clientClass)
-        ? new $clientClass()
-        : $clientClass;
-
     if (!is_dir($path)) {
         $logger->info("create dir {$path}");
         mkdir($path);
