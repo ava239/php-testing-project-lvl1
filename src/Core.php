@@ -74,9 +74,11 @@ function downloadResources(string $url, array $resources, string $outputDir, Log
     $subDir = "{$outputDir}/{$filename}_files";
     $logger->info("resources dir: {$subDir}");
     $normalizedBase = normalizeUrl($url, false);
+    $host = parse_url($url, PHP_URL_HOST);
     $paths = collect($resources)
-        ->map(fn($path) => str_replace($normalizedBase, '', normalizeUrl($path)))
-        ->map(fn($path) => trim($path, '/'))
+        ->map(fn($path) => normalizeUrl($path))
+        ->map(fn($path) => preg_replace("~https?://{$host}~", '', $path))
+        ->map(fn($path) => ltrim($path, '/'))
         ->map(fn($path) => "{$normalizedBase}/{$path}");
     $logger->info('got normalized resources paths', $paths->toArray());
     $logger->info("start resources download");
@@ -95,7 +97,7 @@ function needToDownload(array $pathData, string $baseUri): bool
     if ($normalizedUri === trim($uri, '/')) {
         return true;
     }
-    return $baseUri == $normalizedUri;
+    return parse_url($baseUri, PHP_URL_HOST) == parse_url($normalizedUri, PHP_URL_HOST);
 }
 
 function replaceResourcePaths(array $links, array $files, string $outputDir, Logger $logger): void
