@@ -204,7 +204,7 @@ function prepareFileName(string $url, string $defaultExt = '.html', bool $usePat
     $normalizedUrl = normalizeUrl($url, $usePath);
     $path = parse_url($normalizedUrl, PHP_URL_PATH);
     $host = parse_url($normalizedUrl, PHP_URL_HOST);
-    if (is_string($path) && $path !== '') {
+    if (is_string($path)) {
         $ext = pathinfo($path, PATHINFO_EXTENSION);
         $pathWithoutExt = str_replace(".{$ext}", '', $path);
     } else {

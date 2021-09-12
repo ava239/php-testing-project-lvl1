@@ -25,7 +25,7 @@ class DownloadTest extends TestCase
     {
         $parts = [__DIR__, 'fixtures', $fixtureName];
         $path = realpath(implode('/', $parts));
-        return $path ? $path : '';
+        return is_string($path) ? $path : '';
     }
 
     private function addMockAnswer(string $fixturePath): void
@@ -33,7 +33,7 @@ class DownloadTest extends TestCase
         $expectedPath = $this->getFixtureFullPath($fixturePath);
         $expectedData = file_get_contents($expectedPath);
 
-        $mockResponse = new Response(200, [], $expectedData ? $expectedData : '');
+        $mockResponse = new Response(200, [], is_string($expectedData) ? $expectedData : '');
         $this->mock->append($mockResponse);
     }
 
@@ -79,17 +79,18 @@ class DownloadTest extends TestCase
             ['https://ru.hexlet.io/assets/professions/php.png', 'resources/php.png'],
             ['https://ru.hexlet.io/packs/js/runtime.js', 'resources/runtime.js'],
         ];
-        foreach ($resources as [$link, $fixture]) {
-            $asseetPath = Downloader\prepareFileName($link);
+        collect($resources)->each(function ($resource) use ($expectedFilename): void {
+            [$link, $fixture] = $resource;
+            $assetPath = Downloader\prepareFileName($link);
             $assetFixture = $this->getFixtureFullPath($fixture);
             $assetData = file_get_contents($assetFixture);
             $this->assertTrue(
-                $this->root->hasChild("{$expectedFilename}_files/{$asseetPath}"),
-                "{$link} -> {$expectedFilename}_files/{$asseetPath} doesnt exist"
+                $this->root->hasChild("{$expectedFilename}_files/{$assetPath}"),
+                "{$link} -> {$expectedFilename}_files/{$assetPath} doesnt exist"
             );
-            $actualData = file_get_contents("{$this->rootPath}/{$expectedFilename}_files/{$asseetPath}");
-            $this->assertEquals($assetData, $actualData, "{$asseetPath} doesnt match contents");
-        }
+            $actualData = file_get_contents("{$this->rootPath}/{$expectedFilename}_files/{$assetPath}");
+            $this->assertEquals($assetData, $actualData, "{$assetPath} doesnt match contents");
+        });
     }
 
     /**
