@@ -24,9 +24,8 @@ function downloadPage(string $url, string $outputDir, $clientClass, Logger $logg
         throw new Error("output directory {$outputDir} is not writable");
     }
 
-    $logger = $logger ?? (new Logger('empty'))->pushHandler(new StreamHandler("php://output", Logger::DEBUG));
+    $logger = $logger ?? new Logger('empty');
 
-    /** @var Client $httpClient */
     $httpClient = is_string($clientClass)
         ? new $clientClass()
         : $clientClass;
@@ -62,7 +61,15 @@ function gatherResources(Document $dom, string $baseUri): array
         ->toArray();
 }
 
-function downloadResources(string $url, array $resources, string $outputDir, Logger $logger, Client $httpClient): array
+/**
+ * @param  string  $url
+ * @param  array  $resources
+ * @param  string  $outputDir
+ * @param  Logger  $logger
+ * @param Client $httpClient
+ * @return array
+ */
+function downloadResources(string $url, array $resources, string $outputDir, Logger $logger, $httpClient): array
 {
     $filename = prepareFileName($url, '');
     $subDir = "{$outputDir}/{$filename}_files";
@@ -107,7 +114,13 @@ function replaceResourcePaths(array $links, array $files, string $outputDir, Log
     $logger->info('prepared replaced tags', $replacedLinks);
 }
 
-function getUrl(string $url, Client $httpClient, Logger $logger): Document
+/**
+ * @param  string  $url
+ * @param Client $httpClient
+ * @param  Logger  $logger
+ * @return Document
+ */
+function getUrl(string $url, $httpClient, Logger $logger): Document
 {
     $response = $httpClient->get($url, ['allow_redirects' => false, 'http_errors' => false]);
     if (is_object($response) && method_exists($response, 'getStatusCode')) {
@@ -126,7 +139,14 @@ function getUrl(string $url, Client $httpClient, Logger $logger): Document
     return $dom;
 }
 
-function getResource(string $url, string $path, Logger $logger, Client $httpClient): string
+/**
+ * @param  string  $url
+ * @param  string  $path
+ * @param  Logger  $logger
+ * @param Client $httpClient
+ * @return string
+ */
+function getResource(string $url, string $path, Logger $logger, $httpClient): string
 {
     if (!is_dir($path)) {
         $logger->info("create dir {$path}");
