@@ -59,6 +59,7 @@ class DownloadTest extends TestCase
         $this->addMockAnswer('resources/php.png');
         $this->addMockAnswer('resources/application.css');
         $this->addMockAnswer('html/with-resources.html');
+        $this->addMockAnswer('resources/scripts.js');
         $this->addMockAnswer('resources/runtime.js');
         $expectedPath = $this->getFixtureFullPath('results/with-resources.html');
         $expectedData = file_get_contents($expectedPath);
@@ -77,6 +78,7 @@ class DownloadTest extends TestCase
             ['https://ru.hexlet.io/assets/professions/php.png', 'resources/php.png'],
             ['https://ru.hexlet.io/assets/application.css', 'resources/application.css'],
             ['https://ru.hexlet.io/courses', 'html/with-resources.html'],
+            ['https://ru.hexlet.io/assets/scripts.js', 'resources/scripts.js'],
             ['https://ru.hexlet.io/packs/js/runtime.js', 'resources/runtime.js'],
         ];
         foreach ($resources as [$link, $fixture]) {

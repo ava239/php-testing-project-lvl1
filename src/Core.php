@@ -91,6 +91,7 @@ function needToDownload(array $pathData, string $baseUri): bool
         return true;
     }
     $normalizedBase = normalizeUrl($baseUri, false);
+    echo $normalizedBase. ' '. $normalizedUri;
     return $normalizedBase === $normalizedUri;
 }
 
