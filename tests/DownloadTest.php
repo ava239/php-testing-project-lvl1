@@ -101,7 +101,7 @@ class DownloadTest extends TestCase
         $this->logger->info("testing network error when got response with code {$code}");
         $this->mock->append(new Response($code));
 
-        $this->expectException(\Error::class);
+        $this->expectException(\Exception::class);
         $this->expectExceptionMessage('https://ru.hexlet.io/courses');
         Downloader\downloadPage('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
     }
@@ -115,14 +115,14 @@ class DownloadTest extends TestCase
         $this->addMockAnswer('html/with-resources.html');
         $this->mock->append(new Response($code));
 
-        $this->expectException(\Error::class);
+        $this->expectException(\Exception::class);
         $this->expectExceptionMessage("https://ru.hexlet.io/assets/application.css");
         Downloader\downloadPage('https://ru.hexlet.io/courses', $this->rootPath, $this->httpClient, $this->logger);
     }
 
     public function networkErrorsProvider(): array
     {
-        return [[400], [401], [402], [403], [404], [500], [503], [301], [302], [201]];
+        return [[400], [401], [402], [403], [404], [500], [503]];
     }
 
     public function testSaveError(): void

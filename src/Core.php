@@ -6,6 +6,7 @@ use DiDom\Document;
 use Error;
 use GuzzleHttp\Client;
 use Monolog\Logger;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * @param  string  $url
@@ -124,14 +125,7 @@ function replaceResourcePaths(array $links, array $files, string $outputDir, Log
  */
 function getUrl(string $url, $httpClient, Logger $logger): Document
 {
-    $response = $httpClient->get($url, ['allow_redirects' => false, 'http_errors' => false]);
-    if (is_object($response) && method_exists($response, 'getStatusCode')) {
-        $code = $response->getStatusCode();
-        $logger->info("{$url}: got response with code {$code}");
-        if ($code !== 200) {
-            throw new Error("received response with status code {$code} while accessing {$url}");
-        }
-    }
+    $response = $httpClient->get($url, ['allow_redirects' => false]);
     $html = $response->getBody()->getContents();
 
     $dom = new Document();
@@ -159,18 +153,11 @@ function getResource(string $url, string $path, Logger $logger, $httpClient): st
     }
     $fileName = prepareFileName($url);
     $filePath = "{$path}/{$fileName}";
-    $response = $httpClient->request(
+    $httpClient->request(
         'get',
         $url,
-        ['sink' => $filePath, 'allow_redirects' => false, 'http_errors' => false]
+        ['sink' => $filePath, 'allow_redirects' => false]
     );
-    if (is_object($response) && method_exists($response, 'getStatusCode')) {
-        $code = $response->getStatusCode();
-        $logger->info("{$url}: got response with code {$code}");
-        if ($code !== 200) {
-            throw new Error("received response with status code {$code} while accessing {$url}");
-        }
-    }
     $logger->info("downloaded {$url} to {$filePath}");
     return $filePath;
 }
