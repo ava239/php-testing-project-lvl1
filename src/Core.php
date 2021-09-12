@@ -55,9 +55,7 @@ function gatherResources(Document $dom, string $baseUri): array
             $element
         ]);
     return $results
-        ->filter()
         ->filter(fn($pathData) => needToDownload($pathData, $baseUri))
-        ->values()
         ->toArray();
 }
 
@@ -89,6 +87,9 @@ function downloadResources(string $url, array $resources, string $outputDir, Log
 function needToDownload(array $pathData, string $baseUri): bool
 {
     [$uri] = $pathData;
+    if (!$uri) {
+        return false;
+    }
     $normalizedUri = normalizeUrl($uri, false);
     if ($normalizedUri === trim($uri, '/')) {
         return true;
