@@ -33,7 +33,7 @@ $logger->pushHandler($handler);
 
 try {
     $mainPath = \Downloader\Downloader\downloadPage($args['<url>'], $outputDir, $client, $logger);
-} catch (\Error $e) {
+} catch (\Exception $e) {
     fwrite(STDERR, $e->getMessage());
     fwrite(STDERR, "\n");
     exit(1);
