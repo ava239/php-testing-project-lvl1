@@ -1,6 +1,19 @@
 parameters:
     checkMissingIterableValueType: false
-    level: 6
+    level: 8
     paths:
         - src
         - tests
+
+    reportUnmatchedIgnoredErrors: false
+
+    ignoreErrors:
+        - '#with no typehint specified#'
+        - '#Variable property access on object#'
+        - '#Dynamic call to static method PHPUnit\\Framework\\Assert#'
+
+    phpstanFunctionalProgramming:
+        disallowThrow: false
+        disallowClasses: false
+        disallowVariablesMutation: false
+        disallowUnusedExpression: false

@@ -31,19 +31,20 @@
     "tightenco/collect": "^8.34",
     "nesbot/carbon": "^2.32.2",
     "symfony/string": "^5.1",
-    "phpstan/phpstan": "^0.12.65",
     "guzzlehttp/guzzle": "^7.3",
     "imangazaliev/didom": "^1.18",
-    "monolog/monolog": "^2.3"
+    "monolog/monolog": "^2.3",
+    "mikey179/vfsstream": "^1.6"
   },
   "require-dev": {
     "psy/psysh": "@stable",
     "phpstan/phpstan-phpunit": "^0.12.16",
-    "phpstan/extension-installer": "^1.0",
+    "phpstan/extension-installer": "^1.1",
     "symfony/var-dumper": "^4.0",
     "phpunit/phpunit": "^9.5.9",
     "squizlabs/php_codesniffer": "^3.6.0",
-    "mikey179/vfsstream": "^1.6",
-    "sempro/phpunit-pretty-print": "^1.4"
+    "hexlet/phpstan-fp": "^1.1",
+    "phpstan/phpstan-strict-rules": "^0.12.11",
+    "phpstan/phpstan": "^0.12.98"
   }
 }
