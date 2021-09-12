@@ -5,6 +5,7 @@ namespace Downloader\Downloader;
 use DiDom\Document;
 use Error;
 use GuzzleHttp\Client;
+use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
 /**
@@ -23,7 +24,7 @@ function downloadPage(string $url, string $outputDir, $clientClass, Logger $logg
         throw new Error("output directory {$outputDir} is not writable");
     }
 
-    $logger = $logger ?? new Logger('empty');
+    $logger = $logger ?? (new Logger('empty'))->pushHandler(new StreamHandler("php://output", Logger::DEBUG));
 
     $logger->info("getting data from {$url}");
     $data = getUrl($url, $clientClass, $logger);
@@ -91,7 +92,6 @@ function needToDownload(array $pathData, string $baseUri): bool
         return true;
     }
     $normalizedBase = normalizeUrl($baseUri, false);
-    echo $normalizedBase. ' '. $normalizedUri;
     return $normalizedBase === $normalizedUri;
 }
 
@@ -168,6 +168,7 @@ function getResource(string $url, string $path, Logger $logger, $clientClass): s
         $url,
         ['sink' => $filePath, 'allow_redirects' => false, 'http_errors' => false]
     );
+    var_dump($httpClient);
     if (is_object($response) && method_exists($response, 'getStatusCode')) {
         $code = $response->getStatusCode();
         $logger->info("{$url}: got response with code {$code}");
@@ -195,6 +196,7 @@ function normalizeUrl(string $url, bool $usePath = true): string
 
 function saveFile(string $data, string $url, string $outputDir, Logger $logger): string
 {
+    $logger->info("saving html\n{$data}");
     $fileName = prepareFileName($url);
     $filePath = "{$outputDir}/{$fileName}";
     $logger->info("saving file to {$filePath}");
