@@ -199,18 +199,20 @@ function saveFile(string $data, string $url, string $outputDir, Logger $logger):
     return $filePath;
 }
 
-function prepareFileName(string $url, string $defaultExt = 'html', bool $usePath = true): string
+function prepareFileName(string $url, string $defaultExt = '.html', bool $usePath = true): string
 {
-    $schema = parse_url($url, PHP_URL_SCHEME);
-    $path = parse_url($url, PHP_URL_PATH);
-    $ext = pathinfo($path ? $path : '', PATHINFO_EXTENSION);
-    $ext = $ext ? $ext : $defaultExt;
-    $replaceExt = $ext !== '' ? "~\.{$ext}~" : '~~';
-    $name = preg_replace(
-        ["~$schema://~", $replaceExt, '~[^\d\w]~'],
-        ['', '', '-'],
-        normalizeUrl($url, $usePath)
-    );
-    $ext = $ext !== '' ? ".{$ext}" : '';
+    $normalizedUrl = normalizeUrl($url, $usePath);
+    $path = parse_url($normalizedUrl, PHP_URL_PATH);
+    $host = parse_url($normalizedUrl, PHP_URL_HOST);
+    if (is_string($path) && $path !== '') {
+        $ext = pathinfo($path, PATHINFO_EXTENSION);
+        $pathWithoutExt = str_replace(".{$ext}", '', $path);
+    } else {
+        $ext = '';
+        $pathWithoutExt = '';
+    }
+    $name = preg_replace('~[^\d\w]~', '-', $host . $pathWithoutExt);
+
+    $ext = $ext !== '' ? ".{$ext}" : $defaultExt;
     return "{$name}{$ext}";
 }
