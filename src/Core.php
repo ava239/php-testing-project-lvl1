@@ -54,8 +54,9 @@ function gatherResources(Document $dom, string $baseUri): array
             $element->hasAttribute('src') ? $element->getAttribute('src') : $element->getAttribute('href'),
             $element
         ]);
+    $normalizedBase = normalizeUrl($baseUri, false);
     return $results
-        ->filter(fn($pathData) => needToDownload($pathData, $baseUri))
+        ->filter(fn($pathData) => needToDownload($pathData, $normalizedBase))
         ->toArray();
 }
 
@@ -94,8 +95,7 @@ function needToDownload(array $pathData, string $baseUri): bool
     if ($normalizedUri === trim($uri, '/')) {
         return true;
     }
-    $normalizedBase = normalizeUrl($baseUri, false);
-    return $normalizedBase === $normalizedUri;
+    return $baseUri == $normalizedUri;
 }
 
 function replaceResourcePaths(array $links, array $files, string $outputDir, Logger $logger): void
