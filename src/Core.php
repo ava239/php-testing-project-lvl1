@@ -5,13 +5,12 @@ namespace Downloader\Downloader;
 use DiDom\Document;
 use Error;
 use GuzzleHttp\Client;
-use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
 /**
  * @param  string  $url
  * @param  string  $outputDir
- * @param string|Client $clientClass
+ * @param  string|Client $clientClass
  * @param  Logger|null  $logger
  * @return string
  */
@@ -65,7 +64,7 @@ function gatherResources(Document $dom, string $baseUri): array
  * @param  array  $resources
  * @param  string  $outputDir
  * @param  Logger  $logger
- * @param Client $httpClient
+ * @param  Client $httpClient
  * @return array
  */
 function downloadResources(string $url, array $resources, string $outputDir, Logger $logger, $httpClient): array
@@ -119,7 +118,7 @@ function replaceResourcePaths(array $links, array $files, string $outputDir, Log
 
 /**
  * @param  string  $url
- * @param Client $httpClient
+ * @param  Client $httpClient
  * @param  Logger  $logger
  * @return Document
  */
@@ -146,7 +145,7 @@ function getUrl(string $url, $httpClient, Logger $logger): Document
  * @param  string  $url
  * @param  string  $path
  * @param  Logger  $logger
- * @param Client $httpClient
+ * @param  Client $httpClient
  * @return string
  */
 function getResource(string $url, string $path, Logger $logger, $httpClient): string
@@ -184,7 +183,7 @@ function normalizeUrl(string $url, bool $usePath = true): string
         return $url;
     }
     $path = "{$parsedUrl['scheme']}://{$parsedUrl['host']}";
-    $path = isset($parsedUrl['path']) && $parsedUrl['path'] && $usePath
+    $path = isset($parsedUrl['path']) && $parsedUrl['path'] !== '' && $usePath
         ? "{$path}{$parsedUrl['path']}"
         : $path;
     return strtolower($path ?? '');
@@ -204,14 +203,14 @@ function prepareFileName(string $url, string $defaultExt = 'html', bool $usePath
 {
     $schema = parse_url($url, PHP_URL_SCHEME);
     $path = parse_url($url, PHP_URL_PATH);
-    $ext = pathinfo($path ?: '', PATHINFO_EXTENSION);
-    $ext = $ext ?: $defaultExt;
-    $replaceExt = $ext ? "~\.{$ext}~" : '~~';
+    $ext = pathinfo($path ? $path : '', PATHINFO_EXTENSION);
+    $ext = $ext ? $ext : $defaultExt;
+    $replaceExt = $ext !== '' ? "~\.{$ext}~" : '~~';
     $name = preg_replace(
         ["~$schema://~", $replaceExt, '~[^\d\w]~'],
         ['', '', '-'],
         normalizeUrl($url, $usePath)
     );
-    $ext = $ext ? ".{$ext}" : '';
+    $ext = $ext !== '' ? ".{$ext}" : '';
     return "{$name}{$ext}";
 }

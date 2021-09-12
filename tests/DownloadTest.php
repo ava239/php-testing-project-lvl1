@@ -25,7 +25,7 @@ class DownloadTest extends TestCase
     {
         $parts = [__DIR__, 'fixtures', $fixtureName];
         $path = realpath(implode('/', $parts));
-        return $path ?: '';
+        return $path ? $path : '';
     }
 
     private function addMockAnswer(string $fixturePath): void
@@ -33,7 +33,7 @@ class DownloadTest extends TestCase
         $expectedPath = $this->getFixtureFullPath($fixturePath);
         $expectedData = file_get_contents($expectedPath);
 
-        $mockResponse = new Response(200, [], $expectedData ?: '');
+        $mockResponse = new Response(200, [], $expectedData ? $expectedData : '');
         $this->mock->append($mockResponse);
     }
 
