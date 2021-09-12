@@ -44,15 +44,13 @@ function downloadPage(string $url, string $outputDir, $clientClass, Logger $logg
 
 function gatherResources(Document $dom, string $baseUri): array
 {
-    $images = $dom->find('img');
-    $imageSrcs = collect($images)->map(fn($image) => [$image->getAttribute('src'), $image]);
-    $links = $dom->find('link');
-    $linkSrcs = collect($links)->map(fn($link) => [$link->getAttribute('href'), $link]);
-    $scripts = $dom->find('script');
-    $scriptSrcs = collect($scripts)->map(fn($script) => [$script->getAttribute('src'), $script]);
-    return $imageSrcs
-        ->merge($linkSrcs)
-        ->merge($scriptSrcs)
+    $elements = $dom->find('img, link, script');
+    $results = collect($elements)
+        ->map(fn($element) => [
+            $element->hasAttribute('src') ? $element->getAttribute('src') : $element->getAttribute('href'),
+            $element
+        ]);
+    return $results
         ->filter()
         ->filter(fn($pathData) => needToDownload($pathData, $baseUri))
         ->values()
@@ -168,7 +166,6 @@ function getResource(string $url, string $path, Logger $logger, $clientClass): s
         $url,
         ['sink' => $filePath, 'allow_redirects' => false, 'http_errors' => false]
     );
-    var_dump($httpClient);
     if (is_object($response) && method_exists($response, 'getStatusCode')) {
         $code = $response->getStatusCode();
         $logger->info("{$url}: got response with code {$code}");
