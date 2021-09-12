@@ -28,35 +28,32 @@ function downloadPage(string $url, string $outputDir, $clientClass, Logger $logg
     $logger->info("getting data from {$url}");
     $data = getUrl($url, $clientClass, $logger);
     $logger->info("start parsing resource list");
-    $resources = getResources($data, $url);
-    $logger->info("parsed resource list:", $resources);
+    $resources = gatherResources($data, $url);
+    $paths = collect($resources)->map(fn($data) => $data[0])->toArray();
+    $logger->info("parsed resource list:", $paths);
     $logger->info("start resources handling");
-    $savedFiles = downloadResources($url, $resources, $outputDir, $logger, $clientClass);
+    $savedFiles = downloadResources($url, $paths, $outputDir, $logger, $clientClass);
     $logger->info("completed resources handling");
     $logger->info("replace resource paths in document");
-    $newData = replaceResourcePaths($data, $resources, $savedFiles, $outputDir, $logger);
-    $fileName = saveFile($newData, $url, $outputDir, $logger);
+    replaceResourcePaths($resources, $savedFiles, $outputDir, $logger);
+    $fileName = saveFile($data->html(), $url, $outputDir, $logger);
     $logger->info("return {$fileName}");
     return $fileName;
 }
 
-function getResources(string $html, string $baseUri): array
+function gatherResources(Document $dom, string $baseUri): array
 {
-    $dom = new Document();
-    if ($html !== '') {
-        $dom->loadHtml($html);
-    }
     $images = $dom->find('img');
-    $imageSrcs = collect($images)->map(fn($image) => $image->getAttribute('src'));
+    $imageSrcs = collect($images)->map(fn($image) => [$image->getAttribute('src'), $image]);
     $links = $dom->find('link');
-    $linkSrcs = collect($links)->map(fn($link) => $link->getAttribute('href'));
+    $linkSrcs = collect($links)->map(fn($link) => [$link->getAttribute('href'), $link]);
     $scripts = $dom->find('script');
-    $scriptSrcs = collect($scripts)->map(fn($script) => $script->getAttribute('src'));
+    $scriptSrcs = collect($scripts)->map(fn($script) => [$script->getAttribute('src'), $script]);
     return $imageSrcs
         ->merge($linkSrcs)
         ->merge($scriptSrcs)
         ->filter()
-        ->filter(fn($path) => needToDownload($path, $baseUri))
+        ->filter(fn($pathData) => needToDownload($pathData, $baseUri))
         ->values()
         ->toArray();
 }
@@ -86,8 +83,9 @@ function downloadResources(string $url, array $resources, string $outputDir, Log
     return $savedFiles->toArray();
 }
 
-function needToDownload(string $uri, string $baseUri): bool
+function needToDownload(array $pathData, string $baseUri): bool
 {
+    [$uri] = $pathData;
     $normalizedUri = normalizeUrl($uri, false);
     if ($normalizedUri === trim($uri, '/')) {
         return true;
@@ -96,22 +94,30 @@ function needToDownload(string $uri, string $baseUri): bool
     return $normalizedBase === $normalizedUri;
 }
 
-function replaceResourcePaths(string $html, array $links, array $files, string $outputDir, Logger $logger): string
+function replaceResourcePaths(array $links, array $files, string $outputDir, Logger $logger): void
 {
     $relativeFiles = collect($files)
         ->map(fn($filePath) => str_replace("{$outputDir}/", '', $filePath))
         ->toArray();
     $logger->info('got relative files paths', $relativeFiles);
-    return str_replace($links, $relativeFiles, $html);
+    $replacedLinks = collect($links)->map(function ($link, $key) use ($relativeFiles) {
+        if ($link[1]->hasAttribute('src')) {
+            $link[1]->src = $relativeFiles[$key];
+        } else {
+            $link[1]->href = $relativeFiles[$key];
+        }
+        return $link[1];
+    })->toArray();
+    $logger->info('prepared replaced tags', $replacedLinks);
 }
 
 /**
  * @param  string  $url
  * @param  string|Client  $clientClass
  * @param  Logger  $logger
- * @return string
+ * @return Document
  */
-function getUrl(string $url, $clientClass, Logger $logger): string
+function getUrl(string $url, $clientClass, Logger $logger): Document
 {
     $httpClient = is_string($clientClass)
         ? new $clientClass()
@@ -125,7 +131,13 @@ function getUrl(string $url, $clientClass, Logger $logger): string
             throw new Error("received response with status code {$code} while accessing {$url}");
         }
     }
-    return $response->getBody()->getContents();
+    $html = $response->getBody()->getContents();
+
+    $dom = new Document();
+    if ($html !== '') {
+        $dom->loadHtml($html);
+    }
+    return $dom;
 }
 
 /**
